@@ -1,9 +1,9 @@
-################################################
-#                                              #
-#     LEVEL GENERATOR FOR SOKOBAN FRAMEWORK    #
-#         Written by [YOUR NAME HERE]          #
-#                                              #
-################################################
+##############################################################
+#                                                            #
+#     LEVEL GENERATOR FOR SOKOBAN FRAMEWORK                  #
+#         Written by Dasari Sri Sai Abhishake Gopal          #
+#                                                            #
+##############################################################
 
 
 # import libraries
@@ -15,12 +15,12 @@ import numpy as np
 
 # COMMAND LINE ARGS
 EVAL_AGENT = "AStar"			#sokoban master agent to use as evaluator
-SOLVE_ITERATIONS = 1250			#number of iterations to run agent for
+SOLVE_ITERATIONS = 3000			#number of iterations to run agent for
 
 MIN_SOL_LEN = 5					#minimum length of solution
-MAX_SOL_LEN = 15				#maximum length of solution
+MAX_SOL_LEN = 30				#maximum length of solution
 
-NUM_LEVELS = 20					#number of levels to generate
+NUM_LEVELS = 40					#number of levels to generate
 OUT_DIR = "assets/gen_levels"	#directory to output generated levels
 LEVEL_PREFIX = "Level"			#prefix for the filename of the generated levels
 
@@ -56,6 +56,7 @@ def makeEmptyLevel(w=9,h=9):
 	tbw = [] #top/bottom walls
 	lrw = [] #left/right walls
 
+
 	#initialize row setup
 	for i in range(w):
 		tbw.append(_wall)
@@ -86,90 +87,99 @@ def makeEmptyLevel(w=9,h=9):
 ##                           ##
 ###############################
 
-
-
-"""
-Parameters:
-    map (numpy.int[][]): a numpy 2D array of the current map
-    tiles (string[]): a list of all the tiles in order
-
-Returns:
-    string[][]: a 2D map of tile strings instead of numbers
-"""
-
-def get_string_map(map, tiles):
-    int_to_string = dict((i, s) for i, s in enumerate(tiles))
-    result = []
-    for y in range(map.shape[0]):
-        result.append([])
-        for x in range(map.shape[1]):
-            result[y].append(int_to_string[int(map[y][x])])
-    return result
-
-"""
-Parameters:
-    prob (dict(string,float)): a dictionary of the probabilities for each tile name
-    tiles (string[]): a list of all the tiles in order
-
-Returns:
-    Dict(int,float): a dictionary of tile numbers to probability values (sum to 1)
-"""
-
-def get_int_prob(prob, tiles):
-    string_to_int = dict((s, i) for i, s in enumerate(tiles))
-    result = {}
-    total = 0.0
-    for t in tiles:
-        result[string_to_int[t]] = prob[t]
-        total += prob[t]
-    for i in result:
-        result[i] /= total
-    return result
-
-"""""
-Parameters:
-    random (numpy.random): random object to help generate the map
-    width (int): the generated map width
-    height (int): the generated map height
-    prob (dict(int,float)): the probability distribution of each tile value
-
-Returns:
-    int[][]: the random generated map
-"""
-
-
-def gen_random_map(random, width, height, prob):
-    map = random.choice(list(prob.keys()),size=(height,width),p=list(prob.values())).astype(np.uint8)
-    return map
-
-"""
-Parameters:
-    map_locations (Dict(string,(int,int)[])): the histogram of locations of the current map
-    tile_values (any[]): an array of all the tile values that the method is searching for
-
-Returns:
-    (int,int)[]: a list of (x,y) position on the map that have a certain value
-"""
-
-def _get_certain_tiles(map_locations, tile_values):
-    tiles=[]
-    for v in tile_values:
-        tiles.extend(map_locations[v])
-    return tiles
-
-
+def randPos(W,H):
+	x=random.randint(1,W-2)
+	y=random.randint(1,H-2)
+	return x,y
+def randPos_crate(W,H):
+	x=random.randint(2,W-3)
+	y=random.randint(2,H-3)
+	return x,y
 #generates a level
-def buildALevel():
+def buildALevel(bot):
 	# WRITE YOUR OWN CODE HERE
+	W= np.random.randint(7,15)
+	H= np.random.randint(7,15)
+	l=makeEmptyLevel(W,H)
+	coinFlip = 0.5
+	#print("New Game")
+	crates=[]
+	k=random.choice([1,2])
+	for i in range(k):
+		crate=[]
+		x, y = randPos_crate(len(l),len(l[0]))
+		while(l[x][y]!=" "):
+				x, y = randPos_crate(len(l), len(l[0]))
+		l[x][y] = _crate
 
-	l=[]  # needs to be a 2d char array (use the characters from the key above)
+		#print(l[x][y])
+		crate.append(x)
+		crate.append(y)
+		crates.append(crate)
+	#print(crates)
 
+	goals=[]
+	for i in range(k):
+		goal=[]
+		x, y = randPos(len(l), len(l[0]))
+		while (l[x][y] != " "):
+			x, y = randPos(len(l), len(l[0]))
+		l[x][y] = _emptyGoal
+		goal.append(x)
+		goal.append(y)
+		goals.append(goal)
+	#print(goals)
+	bot1=AStarAgent()
+	player=[]
+	x, y = randPos(len(l[0]), len(l))
+	while (l[y][x] != " "):
+		x, y = randPos(len(l[0]), len(l))
+	l[y][x] = _player
+	player_x=x
+	player_y=y
 
+	player.append(x)
+	player.append(y)
+	#print(player)
+	s=lev2Str(l)
+	state = State()
+	state.stringInitialize(s.split("\n"))
+	#print(state)
+	sol = bot1.getSolution(state, maxIterations=SOLVE_ITERATIONS)
+	path=[]
+	for step in sol:
+		path_x=player[0]+step['x']
+		player[0]+=step['x']
+		path_y=player[1]+step['y']
+		player[1]+=step['y']
+		#print(player)
+		path.append([path_x,path_y])
+	#print(path)
+	path_xs=[]
+	path_ys=[]
+	for tile in path:
+		path_xs.append(tile[0])
+		path_ys.append(tile[1])
 
 	# WRITE YOUR CODE HERE #
-
-
-
+	for i in range(len(l)):
+		for j in range(len(l[0])):
+			if random.random() < coinFlip:
+				l[i][j]=_wall
+	#print(goal)
+	for tile in path:
+		l[tile[1]][tile[0]]=_floor
+		if(tile[0]-1!=0):
+			l[tile[1]][tile[0]-1] = _floor
+		if (tile[1] - 1 != 0):
+			l[tile[1]-1][tile[0]] = _floor
+	for goal in goals:
+		l[goal[0]][goal[1]]=_emptyGoal
+	l[player_y][player_x] = _player
+	for crate in crates:
+		l[crate[0]][crate[1]] = _crate
+	s=lev2Str(l)
+	state.stringInitialize(s.split("\n"))
 	return lev2Str(l)  #returns as a string
 
 
@@ -222,27 +232,31 @@ def generateLevels():
 	#create levels
 	totLevels = 0
 	while totLevels < NUM_LEVELS:
-		lvl = buildALevel()
+		lvl = buildALevel(solver)
 
 		solvable, solLen = solveLevel(lvl,solver)
 
 		#uncomment these lines if you want to see all the generated levels (including the failed ones)
-		'''
+
 		print(f"{lvl}solvable: {solvable}")
 		if solvable:
 			print(f"  -> solution len: {solLen}\n")
 		else:
 			print("")
-		'''
+
+
 
 		#export the level if solvable 
 		if solvable and solLen >= MIN_SOL_LEN and solLen <= MAX_SOL_LEN:
 			with open(f"{OUT_DIR}/{LEVEL_PREFIX}_{totLevels}.txt",'w') as f:
 				f.write(lvl)
-			totLevels+=1
+				#print(lvl)
+		totLevels+=1
 
-			#show the level exported
-			print(f"LEVEL #{totLevels}/{NUM_LEVELS} -> {solLen} MOVES\n{lvl}")
+
+
+	print(f"LEVEL #{totLevels}/{NUM_LEVELS} -> {solLen} MOVES\n{lvl}")
+
 
 
 
